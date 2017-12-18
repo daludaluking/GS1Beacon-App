@@ -44,9 +44,11 @@ public class ServiceActivity extends AppCompatActivity {
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADVDATA = "DEVICE_ADVDATA";
+    public static final String EXTRAS_DEVICE_ADVEXTDATA = "DEVICE_ADVEXTDATA";
 
     private String mDeviceName;
     private String mDeviceAdvData;
+    private String mDeviceAdvExtData;
     private ListView mServiceList;
     private ServiceListAdapter mServiceAdapter;
     //private ArrayList<ServiceItem> mServiceItemList;
@@ -81,6 +83,9 @@ public class ServiceActivity extends AppCompatActivity {
         final Intent intent = getIntent();
         mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         mDeviceAdvData = intent.getStringExtra(EXTRAS_DEVICE_ADVDATA);
+        mDeviceAdvExtData = intent.getStringExtra(EXTRAS_DEVICE_ADVEXTDATA);
+        if (mDeviceAdvExtData == null)
+            mDeviceAdvExtData = "";
         Bundle args1 = intent.getBundleExtra("BUNDLE1");
         Advs = (ArrayList<String>)  args1.getSerializable("ARRAYLIST1");
         Bundle args2 = intent.getBundleExtra("BUNDLE2");
@@ -118,9 +123,9 @@ public class ServiceActivity extends AppCompatActivity {
                 break;
         }
         ((TextView) findViewById(R.id.b_name)).setText(mDeviceName);
-        ((TextView) findViewById(R.id.b_advdata)).setText(mDeviceAdvData);
+        ((TextView) findViewById(R.id.b_advdata)).setText(mDeviceAdvData+mDeviceAdvExtData);
 
-        displayService(mDeviceAdvData);
+        displayService(mDeviceAdvData, mDeviceAdvExtData);
 
         // Initializes list view adapter.
         mServiceList = (ListView) findViewById(R.id.mServiceList);
@@ -257,9 +262,11 @@ public class ServiceActivity extends AppCompatActivity {
         }
     };
 
-    private void displayService(String data) {
+    private void displayService(String data, String extData) {
 
         String[] arr = data.split("[\\(\\)]");
+        final String innerEData1 = data;
+        final String innerEData2 = extData;
 
         for (int i = 0; i < arr.length; i++) {
             switch (arr[i]) {
@@ -267,9 +274,11 @@ public class ServiceActivity extends AppCompatActivity {
                     final String FQDN1 = convertGS1EStoFQDN("01", arr[i+1]);
                     Thread t1 = new Thread(new Runnable() {
                         private String tFQDN = FQDN1;
+                        private String eData1 = innerEData1;
+                        private String eData2 = innerEData2;
                         @Override
                         public void run() {
-                            onsQuery(tFQDN);
+                            onsQuery(tFQDN, eData1, eData2);
                         }
                     });
                     t1.start();
@@ -280,9 +289,11 @@ public class ServiceActivity extends AppCompatActivity {
                     final String FQDN2 = convertGS1EStoFQDN("414", arr[i+1]);
                     Thread t2 = new Thread(new Runnable() {
                         private String tFQDN = FQDN2;
+                        private String eData1 = innerEData1;
+                        private String eData2 = innerEData2;
                         @Override
                         public void run() {
-                            onsQuery(tFQDN);
+                            onsQuery(tFQDN, eData1, eData2);
                         }
                     });
                     t2.start();
@@ -293,9 +304,11 @@ public class ServiceActivity extends AppCompatActivity {
                     final String FQDN3 = convertGS1EStoFQDN("255", arr[i+1]);
                     Thread t3 = new Thread(new Runnable() {
                         private String tFQDN = FQDN3;
+                        private String eData1 = innerEData1;
+                        private String eData2 = innerEData2;
                         @Override
                         public void run() {
-                            onsQuery(tFQDN);
+                            onsQuery(tFQDN, eData1, eData2);
                         }
                     });
                     t3.start();
@@ -304,9 +317,11 @@ public class ServiceActivity extends AppCompatActivity {
                     final String FQDN4 = convertGS1EStoFQDN("8017", arr[i+1]);
                     Thread t4 = new Thread(new Runnable() {
                         private String tFQDN = FQDN4;
+                        private String eData1 = innerEData1;
+                        private String eData2 = innerEData2;
                         @Override
                         public void run() {
-                            onsQuery(tFQDN);
+                            onsQuery(tFQDN, eData1, eData2);
                         }
                     });
                     t4.start();
@@ -401,9 +416,11 @@ public class ServiceActivity extends AppCompatActivity {
         return retFQDN;
     }
 
-    private void onsQuery(String FQDN) {
+    private void onsQuery(String FQDN, String eData1, String eData2) {
 
         ArrayList<String> ret = new ArrayList<>();
+        String serialNumbers = "";
+        String gtin = "";
 
         try {
             Resolver resolver = new SimpleResolver(RESOLVER_ADDRESS);
@@ -415,6 +432,13 @@ public class ServiceActivity extends AppCompatActivity {
 
             Lookup lookup = new Lookup(FQDN, Type.NAPTR);
             Record[] records = lookup.run();
+            Log.d("onsQuery | FQDN=", FQDN);
+
+            if (eData1.substring(1,3).equals("01"))
+                gtin = eData1.substring(4, eData1.length()).trim();
+
+            if (eData2.substring(1,3).equals("21"))
+                serialNumbers = eData2.substring(4, eData2.length()).trim();
 
             if (lookup.getResult() == Lookup.SUCCESSFUL) {
                 int count = 0;
@@ -426,8 +450,23 @@ public class ServiceActivity extends AppCompatActivity {
                     String msg = "";
                     msg += FQDN + "\t";
                     msg += naptrRecord.getRegexp() + "\t";
-                    //TODO: get serviceType.xml form SNS.
-                    msg += naptrRecord.getService() + "\t";
+
+                    //TODO, async operation..
+                    ServiceTypeparser parser = new ServiceTypeparser(naptrRecord.getService(), null);
+                    parser.startParsing();
+                    String serviceType = parser.getResult().get(ServiceTypeparser.ID_TAGS);
+                    if (serviceType == null) {
+                        msg += naptrRecord.getService() + "\t";
+                    } else {
+                        msg += serviceType + "\t";
+                    }
+
+                    if (gtin.length() > 0)
+                        msg += gtin + "\t";
+
+                    if (serialNumbers.length() > 0)
+                        msg += serialNumbers + "\t";
+
                     msg += count + "\t";        //temp icon.
                     msg += count + "\t";        //temp abstract.
 
@@ -436,6 +475,8 @@ public class ServiceActivity extends AppCompatActivity {
 
                     count++;
                     Log.d("onsQuery | NAPTR | ", naptrRecord.toString());
+                    Log.d("onsQuery | serial number | ", serialNumbers);
+
                 }
                 //Send message.
                 handler.sendMessage(hMsg);
@@ -486,6 +527,8 @@ public class ServiceActivity extends AppCompatActivity {
                 //ServiceItem sI = new ServiceItem(temp[0],temp[1],temp[2],temp[3],temp[4]);
 
                 //mServiceItemList.add(sI);
+                if (temp[1].indexOf("[sgtin]") >= 0)
+                    temp[1] = temp[1].replace("[sgtin]", temp[3]+"."+temp[4]);
 
                 mServiceAdapter.addService(temp[2], temp[1]);
                 mServiceAdapter.notifyDataSetChanged();

@@ -220,11 +220,13 @@ public class BeaconActivity extends AppCompatActivity  {
                 startActivity(intent2);
                 break;
             case R.id.action_wifiap:
+
                 if (mScanning) {
                     mScanning = false;
                     mLeScanner.stopScan(mLeScanCallback);
                 }
                 startActivity(new Intent(BeaconActivity.this, WiFiActivity.class));
+
                 break;
             default:
                 break;
@@ -249,7 +251,13 @@ public class BeaconActivity extends AppCompatActivity  {
                     Intent intent = new Intent(BeaconActivity.this, ServiceActivity.class);
                     intent.putExtra(ServiceActivity.EXTRAS_DEVICE_NAME, result.getFormatName());
                     if (content.substring(1,3).equals("01")) {
-                        intent.putExtra(ServiceActivity.EXTRAS_DEVICE_ADVDATA, "(01)" + content.substring(4,17) + "\n");
+                        intent.putExtra(ServiceActivity.EXTRAS_DEVICE_ADVDATA, "(01)" + content.substring(3,17) + "\n");
+                        if (content.length() > 17) {
+                            //we need serial numbers
+                            if (content.substring(17, 19).equals("21")) {
+                                intent.putExtra(ServiceActivity.EXTRAS_DEVICE_ADVEXTDATA, "(21)"+content.substring(19, content.length()));
+                            }
+                        }
                     } else if (content.substring(1,4).equals("414")) {
                         intent.putExtra(ServiceActivity.EXTRAS_DEVICE_ADVDATA, "(414)" + content.substring(5,18) + "\n");
                     } else {
