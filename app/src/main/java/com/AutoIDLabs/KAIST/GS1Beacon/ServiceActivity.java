@@ -434,10 +434,10 @@ public class ServiceActivity extends AppCompatActivity {
             Record[] records = lookup.run();
             Log.d("onsQuery | FQDN=", FQDN);
 
-            if (eData1.substring(1,3).equals("01"))
+            if (eData1.length() > 4 && eData1.substring(1,3).equals("01"))
                 gtin = eData1.substring(4, eData1.length()).trim();
 
-            if (eData2.substring(1,3).equals("21"))
+            if (eData2.length() > 4 && eData2.substring(1,3).equals("21"))
                 serialNumbers = eData2.substring(4, eData2.length()).trim();
 
             if (lookup.getResult() == Lookup.SUCCESSFUL) {
@@ -466,6 +466,8 @@ public class ServiceActivity extends AppCompatActivity {
 
                     if (serialNumbers.length() > 0)
                         msg += serialNumbers + "\t";
+                    else
+                        msg += "no_serial\t";
 
                     msg += count + "\t";        //temp icon.
                     msg += count + "\t";        //temp abstract.
@@ -527,8 +529,12 @@ public class ServiceActivity extends AppCompatActivity {
                 //ServiceItem sI = new ServiceItem(temp[0],temp[1],temp[2],temp[3],temp[4]);
 
                 //mServiceItemList.add(sI);
-                if (temp[1].indexOf("[sgtin]") >= 0)
-                    temp[1] = temp[1].replace("[sgtin]", temp[3]+"."+temp[4]);
+                if (temp[1].indexOf("[sgtin]") >= 0) {
+                    String gtin_str = temp[3];
+                    if (!temp[4].equals("no_serial"))
+                        gtin_str +=  "." + temp[4];
+                    temp[1] = temp[1].replace("[sgtin]", gtin_str);
+                }
 
                 mServiceAdapter.addService(temp[2], temp[1]);
                 mServiceAdapter.notifyDataSetChanged();
