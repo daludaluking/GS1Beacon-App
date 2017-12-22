@@ -30,7 +30,7 @@ public class WebActivity extends AppCompatActivity {
         setLayout();
 
         // Focusable
-        mWebView.getSettings().setBuiltInZoomControls(true);
+        //mWebView.getSettings().setBuiltInZoomControls(true);
         mWebView.getSettings().setSupportZoom(true);
         // Javascript enable
         mWebView.getSettings().setJavaScriptEnabled(true);

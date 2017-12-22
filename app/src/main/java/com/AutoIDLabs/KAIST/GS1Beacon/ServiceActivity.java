@@ -1,8 +1,10 @@
 package com.AutoIDLabs.KAIST.GS1Beacon;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -253,6 +255,11 @@ public class ServiceActivity extends AppCompatActivity {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             final String url = (mServiceAdapter.getURL(position).split("!"))[2];
             if (url == null) return;
+            if (url.indexOf("epcis") >= 0) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(intent);
+                return;
+            }
             Intent intent = new Intent(view.getContext(), WebActivity.class);
             intent.putExtra(WebActivity.EXTRAS_SERVICE_URL, url);
 
@@ -416,6 +423,7 @@ public class ServiceActivity extends AppCompatActivity {
         return retFQDN;
     }
 
+    @SuppressLint("LongLogTag")
     private void onsQuery(String FQDN, String eData1, String eData2) {
 
         ArrayList<String> ret = new ArrayList<>();
@@ -530,7 +538,9 @@ public class ServiceActivity extends AppCompatActivity {
 
                 //mServiceItemList.add(sI);
                 if (temp[1].indexOf("[sgtin]") >= 0) {
-                    String gtin_str = temp[3];
+                    int digit = 8;
+                    String gtin_str;
+                    gtin_str = temp[3].substring(1,9)+"."+temp[3].substring(0,1)+temp[3].substring(9,13);
                     if (!temp[4].equals("no_serial"))
                         gtin_str +=  "." + temp[4];
                     temp[1] = temp[1].replace("[sgtin]", gtin_str);
