@@ -35,9 +35,20 @@ import org.xbill.DNS.Resolver;
 import org.xbill.DNS.SimpleResolver;
 import org.xbill.DNS.Type;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+import com.android.volley.toolbox.JsonObjectRequest;
+import org.json.JSONObject;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import static android.provider.ContactsContract.CommonDataKinds.Website.URL;
+
 
 /**
  * Created by SNAIL on 2016-02-12.
@@ -429,6 +440,24 @@ public class ServiceActivity extends AppCompatActivity {
         ArrayList<String> ret = new ArrayList<>();
         String serialNumbers = "";
         String gtin = "";
+
+        String url = "http://198.13.60.39:5052/ons/gs1code?0080000000001";
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        String msg = response.toString();
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // TODO: Handle error
+                    }
+                });
+        MySingleton.getInstance(this).addToRequestQueue(jsonObjectRequest);
 
         try {
             Resolver resolver = new SimpleResolver(RESOLVER_ADDRESS);
